@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>影像辨識前端</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    #app {
+      max-width: 1600px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      display: flex;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .left, .right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    h3 {
+      margin-top: 0;
+    }
+
+    select, input[type="range"] {
+      width: 100%;
+      padding: 6px;
+      margin-top: 8px;
+    }
+
+    button {
+      padding: 12px;
+      background: #42b983;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover:enabled {
+      background: #369d72;
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .image-row {
+      display: flex;
+      gap: 20px;
+      flex-wrap: nowrap;
+      justify-content: center;
+    }
+
+    .image-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    img {
+      width: 100%;
+      max-height: 600px;
+      object-fit: contain;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    .result-box {
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 6px;
+      min-height: 40px;
+      white-space: pre-wrap;
+      font-family: 'Courier New', Courier, monospace; 
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="left">
+      <div class="section">
+        <h3>選擇模型</h3>
+        <select v-model="selectedModel">
+          <option disabled value="">請選擇模型</option>
+          <option v-for="model in modelList" :key="model.name" :value="model.path">
+            {{ model.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="section">
+        <button @click="loadModel" :disabled="!selectedModel">載入模型</button>
+      </div>
+
+      <div class="section">
+        <h3>顏色下限比率: {{ lo_ratio }}</h3>
+        <input type="range" v-model="lo_ratio" min="0" max="1" step="0.01" style="width: 300px;">
+      </div>
+
+      <div class="section">
+        <h3>閥值: {{ threshold }}</h3>
+        <input type="range" v-model="threshold" min="0" max="3" step="0.01" style="width: 300px;">
+      </div>
+      
+      <div class="section">
+        <h3>上傳圖片</h3>
+        <input type="file" @change="onFileChange" accept="image/*">
+      </div>
+
+      <div class="section">
+        <button @click="analyzeImage" :disabled="!imageUrl">進行辨識</button>
+      </div>
+    </div>
+
+    <!-- 右邊結果顯示 -->
+    <div class="right">
+      <div class="section">
+        <h3>影像預覽</h3>
+        <div class="image-row">
+          <div class="image-col">
+            <strong>原圖：</strong>
+            <img v-if="imageUrl" :src="imageUrl" alt="原圖">
+          </div>
+          <div class="image-col">
+            <strong>熱圖：</strong>
+            <img v-if="heatmapUrl" :src="heatmapUrl" alt="熱圖">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>辨識結果</h3>
+        <div class="result-box">
+          {{ result }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vue -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        lo_ratio: 0.6,
+        selectedModel: '',
+        modelList: [],
+        threshold: 0.5,
+        selectedImage: null,
+        imageUrl: '',
+        heatmapUrl: '',
+        result: ''
+      },
+      created() {
+        fetch("http://127.0.0.1:5000/models")
+          .then(response => response.json())
+          .then(data => {
+            this.modelList = data;
+          })
+          .catch(error => {
+            console.error("載入模型清單失敗:", error);
+          });
+      },
+      methods: {
+        onFileChange(event) {
+          const file = event.target.files[0];
+          if (file) {
+            this.selectedImage = file;
+            this.imageUrl = URL.createObjectURL(file);
+            this.heatmapUrl = '';
+            this.result = '';
+          }
+        },
+        loadModel() {
+          if (!this.selectedModel) return;
+          this.result = '載入模型中...';
+
+          fetch('http://127.0.0.1:5000/load_model', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ model_path: this.selectedModel })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.error) {
+              this.result = '載入失敗: ' + data.error;
+            } else {
+              this.result = '模型載入成功';
+            }
+          })
+          .catch(err => {
+            this.result = '載入模型錯誤: ' + err.message;
+          });
+        },
+        analyzeImage() {
+          if (!this.selectedImage) return;
+
+          this.result = '辨識中...';
+          this.heatmapUrl = '';
+
+          const formData = new FormData();
+          formData.append('threshold', this.threshold);
+          formData.append('lo_ratio', this.lo_ratio); 
+          formData.append('image', this.selectedImage);
+
+          fetch('http://127.0.0.1:5000/run_test', {
+            method: 'POST',
+            body: formData
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.error) {
+              this.result = '錯誤: ' + data.error;
+              return;
+            }
+            this.result = [
+                            '',
+                            '辨識完成！',
+                            `分類結果：${data.result || (data.label === 1 ? '異常' : '正常')}`,
+                            `異常分數：${data.score}`
+                          ].join('\n');
+            if (data.heatmap_url) {
+              this.heatmapUrl = data.heatmap_url;
+            }
+          })
+          .catch(err => {
+            this.result = '呼叫後端失敗: ' + err.message;
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>
