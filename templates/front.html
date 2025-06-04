@@ -135,7 +135,6 @@
       </div>
     </div>
 
-    <!-- 右邊結果顯示 -->
     <div class="right">
       <div class="section">
         <h3>影像預覽</h3>
@@ -240,11 +239,11 @@
               return;
             }
             this.result = [
-                            '',
-                            '辨識完成！',
-                            `分類結果：${data.result || (data.label === 1 ? '異常' : '正常')}`,
-                            `異常分數：${data.score}`
-                          ].join('\n');
+              '',
+              '辨識完成！',
+              `分類結果：${data.result || (data.label === 1 ? '異常' : '正常')}`,
+              `異常分數：${data.score}`
+            ].join('\n');
             if (data.heatmap_url) {
               this.heatmapUrl = data.heatmap_url;
             }

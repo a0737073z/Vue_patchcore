@@ -2,13 +2,13 @@ import os
 import glob
 import uuid
 from PIL import Image
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file,send_from_directory
 from flask_cors import CORS
 import pytorch_lightning as pl
 import torch
 from patchcore_test_alldata import AnomalyModel  
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", template_folder="templates")
 CORS(app)
 
 loaded_model = None
@@ -37,6 +37,10 @@ def load_model_from_path(model_path, output_dir=OUTPUT_DIR):
     )
     model.eval()
     return model, checkpoint_path
+
+@app.route('/')
+def home():
+    return send_from_directory("templates", "front.html")
 
 @app.route('/load_model', methods=['POST'])
 def load_model_api():
@@ -151,4 +155,4 @@ def get_heatmap(img_id):
         return "Heatmap not found", 404
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000)
+    app.run(host="127.0.0.1", port=5000,debug=True)
