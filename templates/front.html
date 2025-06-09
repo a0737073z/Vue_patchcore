@@ -117,7 +117,7 @@
 
       <div class="section">
         <h3>顏色下限比率: {{ lo_ratio }}</h3>
-        <input type="range" v-model="lo_ratio" min="0" max="1" step="0.01" style="width: 300px;">
+        <input type="range" v-model="lo_ratio" min="0" max="0.9" step="0.01" style="width: 300px;">
       </div>
 
       <div class="section">
@@ -168,7 +168,7 @@
         lo_ratio: 0.6,
         selectedModel: '',
         modelList: [],
-        threshold: 0.5,
+        threshold: 1.5,
         selectedImage: null,
         imageUrl: '',
         heatmapUrl: '',
@@ -185,6 +185,28 @@
           });
       },
       methods: {
+        triggerCamera() {
+          this.result = '拍照中...';
+
+          fetch('http://127.0.0.1:5000/camera', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: true })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              this.result = '拍照成功';
+            } else {
+              this.result = '拍照失敗: ' + data.message;
+            }
+          })
+          .catch(err => {
+            this.result = '拍照請求失敗: ' + err.message;
+          });
+        },
         onFileChange(event) {
           const file = event.target.files[0];
           if (file) {

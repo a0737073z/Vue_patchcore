@@ -1,0 +1,5 @@
+;!@Install@!UTF-8!
+Title="解壓縮工具"
+BeginPrompt="是否要解壓縮？"
+RunProgram="cmd /c mkdir \"%USERPROFILE%\\Documents\\" & 7z x archive.7z -o\"%USERPROFILE%\\Documents\\""
+;!@InstallEnd@!

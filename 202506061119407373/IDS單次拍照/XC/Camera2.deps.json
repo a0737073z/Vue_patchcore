@@ -1,0 +1,67 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "Camera2/1.0.0": {
+        "dependencies": {
+          "ids_peak_afl_dotnet": "1.6.1.0",
+          "ids_peak_dotnet": "1.10.0.0",
+          "ids_peak_ipl_dotnet": "1.14.0.0"
+        },
+        "runtime": {
+          "Camera2.dll": {}
+        }
+      },
+      "ids_peak_afl_dotnet/1.6.1.0": {
+        "runtime": {
+          "ids_peak_afl_dotnet.dll": {
+            "assemblyVersion": "1.6.1.0",
+            "fileVersion": "1.6.1.0"
+          }
+        }
+      },
+      "ids_peak_dotnet/1.10.0.0": {
+        "runtime": {
+          "ids_peak_dotnet.dll": {
+            "assemblyVersion": "1.10.0.0",
+            "fileVersion": "1.10.0.0"
+          }
+        }
+      },
+      "ids_peak_ipl_dotnet/1.14.0.0": {
+        "runtime": {
+          "ids_peak_ipl_dotnet.dll": {
+            "assemblyVersion": "1.14.0.0",
+            "fileVersion": "1.14.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Camera2/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "ids_peak_afl_dotnet/1.6.1.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "ids_peak_dotnet/1.10.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "ids_peak_ipl_dotnet/1.14.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

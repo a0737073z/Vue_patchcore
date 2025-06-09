@@ -2,11 +2,12 @@ import os
 import glob
 import uuid
 from PIL import Image
-from flask import Flask, request, jsonify, send_file,send_from_directory
+from flask import Flask, request, jsonify, send_file,send_from_directory,Response
 from flask_cors import CORS
 import pytorch_lightning as pl
 import torch
-from patchcore_test_alldata import AnomalyModel  
+from patchcore_test_alldata import AnomalyModel 
+import requests 
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 CORS(app)
@@ -15,6 +16,7 @@ loaded_model = None
 model_checkpoint_path = None
 OUTPUT_DIR = os.path.abspath("./output")
 MODEL_ROOT = "C:/Users/user/Desktop/dataset/patchcore_result"
+
 
 def find_latest_checkpoint(model_path):
     ckpt_dir = os.path.join(model_path, "lightning_logs", "version_0", "checkpoints")
@@ -41,6 +43,24 @@ def load_model_from_path(model_path, output_dir=OUTPUT_DIR):
 @app.route('/')
 def home():
     return send_from_directory("templates", "front.html")
+
+@app.route('/camera', methods=['POST'])
+def camera_trigger():
+    try:
+        data = request.get_json()
+        if not data or data.get('status') != True:
+            return jsonify({'success': False, 'message': '格式錯誤或缺少 status: true'})
+
+        ids_url = 'http://localhost:5129/2DCamera/Start'
+        res = requests.post(ids_url, json={'status': True}, timeout=5)
+        
+        if res.status_code == 200 and res.json().get('status') == True:
+            return jsonify({'success': True, 'message': '拍照成功'})
+        else:
+            return jsonify({'success': False, 'message': f'IDS 回應失敗: {res.text}'})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'例外錯誤: {str(e)}'})
 
 @app.route('/load_model', methods=['POST'])
 def load_model_api():
@@ -87,7 +107,6 @@ def run_test():
         image_file = request.files['image']
         image = Image.open(image_file).convert("RGB")
 
-        # 產生唯一ID，確保路徑不覆蓋
         unique_id = str(uuid.uuid4())
         print(unique_id)
 
@@ -107,10 +126,11 @@ def run_test():
 
         lo_ratio = float(request.form.get('lo_ratio', 0.6))
         threshold = float(request.form.get('threshold', 1.5))
-
+        
         loaded_model.single_test_image_path = input_path
         loaded_model.manual_threshold = threshold
         loaded_model.manual_lo_ratio = lo_ratio
+
 
         trainer = pl.Trainer(
             accelerator="gpu" if torch.cuda.is_available() else "cpu",

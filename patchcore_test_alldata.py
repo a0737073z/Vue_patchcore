@@ -105,6 +105,14 @@ class AnomalyModel(pl.LightningModule):
         _ = self.model(x)
         return self.features
 
+    def on_test_start(self):
+
+        self.anomaly_map_all = []
+        self.pred_list_img_lvl = []
+        self.img_path_list = []
+        self.input_x_list = []
+
+
     def test_dataloader(self):
         if hasattr(self, 'single_test_image_path'):
             class SingleImageDataset(Dataset):
@@ -130,12 +138,12 @@ class AnomalyModel(pl.LightningModule):
         # Extract features and embeddings
         features = self(x)
         embeddings = [torch.nn.functional.avg_pool2d(f, 3, 1, 1) for f in features]
-        embedding = embedding_concat(embeddings[0],embeddings[1])
-        embedding_test = np.array(reshape_embedding(np.array(embedding)))
+        embedding_ = embedding_concat(embeddings[0],embeddings[1])
+        embedding_test = np.array(reshape_embedding(np.array(embedding_)))
 
         # KNN search
         knn = KNN(torch.from_numpy(self.embedding_coreset).cuda(), k=self.n_neighbors)
-        score_patches = knn(torch.from_numpy(embedding_test).cuda())[0].cpu().numpy()
+        score_patches = knn(torch.from_numpy(embedding_test).cuda())[0].cpu().detach().numpy()
 
         # Anomaly map generation
         h = w = int(np.sqrt(score_patches.shape[0]))
@@ -182,9 +190,14 @@ class AnomalyModel(pl.LightningModule):
         save_dir = os.path.join(self.output_path, 'anomaly_maps')
         os.makedirs(save_dir, exist_ok=True)
 
-        maps = np.array(self.anomaly_map_all)
-        hi = (maps.max() - maps.min()) * 0.9 + maps.min()
-        lo = (maps.max() - maps.min()) * self.manual_lo_ratio + maps.min()
+        #maps = np.array(self.anomaly_map_all)
+        #hi = (maps.max() - maps.min()) * 1.0 + maps.min()
+        #lo = (maps.max() - maps.min()) * self.manual_lo_ratio + maps.min()
+        #print(f"[DEBUG] anomaly_map_all max: {maps.max():.4f}, min: {maps.min():.4f}")
+        #print(f"[DEBUG] computed hi: {hi:.4f}, lo: {lo:.4f}")
+
+        hi = 2.3
+        lo = hi * self.manual_lo_ratio
 
         for i, (amap, orig, name) in enumerate(zip(self.anomaly_map_all, self.input_x_list, self.img_path_list)):
             amap_norm = select_min_max_norm(amap, hi, lo)
